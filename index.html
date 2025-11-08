@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lofi Photography Gallery</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <h1>✦ Lofi Photography ✦</h1>
+    <nav>
+      <ul id="tabList">
+        <li class="tab active" data-filter="all">All</li>
+        <li class="tab" data-filter="2023">2023</li>
+        <li class="tab" data-filter="2024">2024</li>
+        <li class="tab" data-filter="2025">2025</li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    <section class="gallery" id="gallery">
+      <!-- Example images -->
+      <div class="photo-card" data-year="2025" data-location="NYC">
+        <img src="photos/2025-nyc.jpg" alt="NYC">
+        <div class="caption">
+          <span class="date">2025</span>
+          <span class="location">New York City</span>
+        </div>
+      </div>
+
+      <div class="photo-card" data-year="2024" data-location="Paris">
+        <img src="photos/2024-paris.jpg" alt="Paris">
+        <div class="caption">
+          <span class="date">2024</span>
+          <span class="location">Paris</span>
+        </div>
+      </div>
+
+      <div class="photo-card" data-year="2023" data-location="Tokyo">
+        <img src="photos/2023-tokyo.jpg" alt="Tokyo">
+        <div class="caption">
+          <span class="date">2023</span>
+          <span class="location">Tokyo</span>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>© 2025 Lofi Photography</p>
+  </footer>
+
+  <!-- Lightbox -->
+  <div id="lightbox" class="lightbox hidden">
+    <span class="close">&times;</span>
+    <img id="lightbox-img" src="" alt="">
+    <div class="lightbox-caption">
+      <p id="lightbox-date"></p>
+      <p id="lightbox-location"></p>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
