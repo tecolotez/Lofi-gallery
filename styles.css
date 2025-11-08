@@ -1,119 +1,159 @@
-body {
-  margin: 0;
-  font-family: 'Courier New', monospace;
-  background-color: #1b1125;
-  color: #d8b4fe;
-  text-align: center;
+const gallery = document.getElementById('gallery');
+const tabList = document.getElementById('tabList');
+const lightbox = document.getElementById('lightbox');
+const lightboxImg = document.getElementById('lightbox-img');
+const lightboxDate = document.getElementById('lightbox-date');
+const lightboxLocation = document.getElementById('lightbox-location');
+const lightboxMeta = document.getElementById('lightbox-meta');
+const closeBtn = document.querySelector('.lightbox .close');
+const leftArrow = document.querySelector('.lightbox .left');
+const rightArrow = document.querySelector('.lightbox .right');
+
+let photos = [];
+let currentIndex = 0;
+
+// 🖼 Load all photos
+async function loadPhotos() {
+  const res = await fetch('/photos');
+  photos = await res.json();
+  gallery.innerHTML = '';
+  const tabs = new Set(['all']);
+
+  photos.forEach((p, i) => {
+    tabs.add(p.year);
+    tabs.add(p.location);
+
+    const card = document.createElement('div');
+    card.classList.add('photo-card');
+    card.dataset.year = p.year;
+    card.dataset.location = p.location;
+
+    card.innerHTML = `
+      <img src="${p.url}" alt="${p.location}">
+      <div class="caption">
+        <span class="date">${p.date}</span>
+        <span class="location">${p.location}</span>
+      </div>
+    `;
+    gallery.appendChild(card);
+
+    card.querySelector('img').addEventListener('click', () => openLightbox(i));
+  });
+
+  renderTabs(tabs);
 }
 
-header {
-  padding: 1.5rem 0;
-  background: #2a163b;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+// 🗂 Create filter tabs
+function renderTabs(tabs) {
+  tabList.innerHTML = '';
+  tabs.forEach(t => {
+    const li = document.createElement('li');
+    li.classList.add('tab');
+    if (t === 'all') li.classList.add('active');
+    li.textContent = t.charAt(0).toUpperCase() + t.slice(1);
+    li.dataset.filter = t;
+    tabList.appendChild(li);
+  });
+
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      const filter = tab.dataset.filter;
+      document.querySelectorAll('.photo-card').forEach(card => {
+        card.style.display =
+          filter === 'all' ||
+          card.dataset.year === filter ||
+          card.dataset.location === filter
+            ? 'block'
+            : 'none';
+      });
+    });
+  });
 }
 
-h1 {
-  margin: 0;
-  font-size: 1.8rem;
-  letter-spacing: 2px;
+// 📤 Handle uploads
+const uploadForm = document.getElementById('uploadForm');
+uploadForm.addEventListener('submit', async e => {
+  e.preventDefault();
+  const formData = new FormData(uploadForm);
+  const res = await fetch('/upload', {
+    method: 'POST',
+    body: formData
+  });
+  if (res.ok) {
+    loadPhotos();
+    uploadForm.reset();
+  } else {
+    alert('Upload failed.');
+  }
+});
+
+// 🌌 Lightbox functions
+function openLightbox(index) {
+  const p = photos[index];
+  currentIndex = index;
+  lightboxImg.src = p.url;
+  lightboxDate.textContent = `📅 ${p.date}`;
+  lightboxLocation.textContent = `📍 ${p.location}`;
+  lightboxMeta.textContent = p.camera
+    ? `📷 ${p.camera || ''} | ${p.lens || ''} | ${p.settings || ''}`
+    : '';
+  lightbox.classList.add('visible');
 }
 
-nav ul {
-  display: flex;
-  justify-content: center;
-  list-style: none;
-  padding: 0;
-  margin: 1rem 0 0 0;
-  gap: 1rem;
+function closeLightbox() {
+  lightbox.classList.remove('visible');
+  setTimeout(() => (lightboxImg.src = ''), 300);
 }
 
-.tab {
-  cursor: pointer;
-  padding: 0.5rem 1rem;
-  background: #3a1d4f;
-  border-radius: 10px;
-  transition: background 0.3s;
+function showNextPhoto() {
+  currentIndex = (currentIndex + 1) % photos.length;
+  openLightbox(currentIndex);
 }
 
-.tab.active, .tab:hover {
-  background: #7e22ce;
-  color: white;
+function showPrevPhoto() {
+  currentIndex = (currentIndex - 1 + photos.length) % photos.length;
+  openLightbox(currentIndex);
 }
 
-.gallery {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1.2rem;
-  padding: 2rem;
+// 🔁 Navigation controls
+closeBtn.addEventListener('click', closeLightbox);
+rightArrow.addEventListener('click', showNextPhoto);
+leftArrow.addEventListener('click', showPrevPhoto);
+
+lightbox.addEventListener('click', e => {
+  if (e.target === lightbox) closeLightbox();
+});
+
+// ⌨️ Keyboard navigation
+document.addEventListener('keydown', e => {
+  if (!lightbox.classList.contains('visible')) return;
+  if (e.key === 'ArrowRight') showNextPhoto();
+  if (e.key === 'ArrowLeft') showPrevPhoto();
+  if (e.key === 'Escape') closeLightbox();
+});
+
+// 📱 Swipe gesture support (touch)
+let touchStartX = 0;
+let touchEndX = 0;
+
+lightbox.addEventListener('touchstart', e => {
+  touchStartX = e.changedTouches[0].screenX;
+});
+
+lightbox.addEventListener('touchend', e => {
+  touchEndX = e.changedTouches[0].screenX;
+  handleSwipeGesture();
+});
+
+function handleSwipeGesture() {
+  const diff = touchEndX - touchStartX;
+  const threshold = 50; // Minimum distance for swipe
+  if (Math.abs(diff) > threshold) {
+    if (diff < 0) showNextPhoto(); // swipe left → next
+    else showPrevPhoto(); // swipe right → previous
+  }
 }
 
-.photo-card {
-  position: relative;
-  background: #291739;
-  border-radius: 10px;
-  overflow: hidden;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-  cursor: pointer;
-}
-
-.photo-card img {
-  width: 100%;
-  height: auto;
-  display: block;
-}
-
-.caption {
-  padding: 0.5rem;
-  font-size: 0.9rem;
-  background-color: rgba(45, 25, 65, 0.9);
-}
-
-footer {
-  padding: 1rem;
-  font-size: 0.8rem;
-  color: #a179d5;
-}
-
-/* Lightbox */
-.lightbox {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(20, 10, 30, 0.95);
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  z-index: 100;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.3s;
-}
-
-.lightbox.visible {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.lightbox img {
-  max-width: 90%;
-  max-height: 80vh;
-  border-radius: 10px;
-  box-shadow: 0 0 20px rgba(150, 100, 220, 0.5);
-}
-
-.lightbox .close {
-  position: absolute;
-  top: 20px;
-  right: 25px;
-  font-size: 2rem;
-  cursor: pointer;
-  color: #d8b4fe;
-}
-
-.lightbox-caption {
-  color: #cfa9ff;
-  margin-top: 1rem;
-}
+loadPhotos();
