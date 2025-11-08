@@ -1,4 +1,4 @@
- const tabs = document.querySelectorAll('.tab');
+const tabs = document.querySelectorAll('.tab');
 const photos = document.querySelectorAll('.photo-card');
 const lightbox = document.getElementById('lightbox');
 const lightboxImg = document.getElementById('lightbox-img');
@@ -180,6 +180,7 @@ document.addEventListener('keydown', (e) => {
 });
 
 loadPhotos();
+
 
 
 
